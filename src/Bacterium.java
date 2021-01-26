@@ -15,13 +15,16 @@ public class Bacterium {
 
     public float rotationSpeed = 0.2f;
 
+    //public float speed = 0.5f;
     public float speed = 0.5f;
     public float slip = 0.8f;
 
     public float sightDistance = 100f;
     public float directionChangeRate = 0.05f;
 
-    public Bacterium(int type, float x, float y) {
+    public float bacteria_radius;
+
+    public Bacterium(int type, float x, float y, float radius) {
         this.type = type;
         this.x = x;
         this.y = y;
@@ -33,6 +36,7 @@ public class Bacterium {
         this.tx = 0;
         this.ty = 0;
         this.food = 3f;
+        this.bacteria_radius = radius;
     }
 
 }

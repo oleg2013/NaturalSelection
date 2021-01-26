@@ -5,8 +5,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-public class Form extends JFrame implements Runnable {
+public class Form extends JFrame implements Runnable, MouseListener {
 
     private final int w = 1920;
     private final int h = 1080;
@@ -26,8 +28,8 @@ public class Form extends JFrame implements Runnable {
     private ArrayList<Bacterium> bacteria = new ArrayList<>();
     private ArrayList<Food> food = new ArrayList<>();
 
-    private final int FOOD_RADIUS = 5;
-    private final int BACTERIA_RADIUS = 20;
+    private final int FOOD_RADIUS = 25;
+    private final int START_BACTERIA_RADIUS = 50;
     private int frame = 0;
 
     public Form() {
@@ -43,16 +45,23 @@ public class Form extends JFrame implements Runnable {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocation(50, 50);
         this.add(new JLabel(new ImageIcon(img)));
-        for(int i = 0; i < 1; i++) {
-            Bacterium a = new Bacterium(0, (float)(Math.random() * (w - 100) + 50), (float)(Math.random() * (h - 100) + 50));
+        for (int i = 0; i < 1; i++) {
+            Bacterium a = new Bacterium(0, (float) (Math.random() * (w - 100) + 50),
+                    (float) (Math.random() * (h - 100) + 50), START_BACTERIA_RADIUS);
             bacteria.add(a);
         }
+        addMouseListener(this);
     }
 
     @Override
     public void run() {
-        while(frame < FRAMES_TOTAL) {
+        while (frame < FRAMES_TOTAL) {
             this.repaint();
+            // try {
+            //     Thread.sleep(10);
+            // } catch (InterruptedException e) {
+            //     e.printStackTrace();
+            // }
         }
     }
 
@@ -68,7 +77,15 @@ public class Form extends JFrame implements Runnable {
         Graphics2D g2 = buf.createGraphics();
         g2.drawImage(img, null, 0, 0);
         g2.drawImage(graph, null, 0, 0);
+
+        g2.setColor(Color.BLACK);
+        Font currentFont = g.getFont();
+        Font newFont = currentFont.deriveFont(currentFont.getSize() * 1.4F);
+        g2.setFont(newFont);        
+        g2.drawString(Integer.toString(frame), 10,20);
+        
         ((Graphics2D)g).drawImage(buf, null, 8, 30);
+        //((Graphics2D)g).drawImage(img, null, 8, 30);
     }
 
     private void drawGraph(BufferedImage image) throws IOException {
@@ -85,20 +102,22 @@ public class Form extends JFrame implements Runnable {
             g2.fillRect(px, h - py - 1, 1, py);
             g2.setColor(RED);
             g2.fillRect(px, h - py1 - 450, 1, py1);
-//            int[] speeds = new int[100];
-//            int[] slips = new int[100];
-//            for (Bacterium a : bacteria) {
-//                speeds[(int)(a.speed * 10) - 1]++;
-//                slips[(int)(a.slip * 100) - 1]++;
-//            }
-//            g2.setColor(BG);
-//            g2.fillRect(0, 0, w, h - 400);
+            // алгоритм изменения скоростей
+        //    int[] speeds = new int[100];
+        //    int[] slips = new int[100];
+        //    for (Bacterium a : bacteria) {
+        //        speeds[(int)(a.speed * 10) - 1]++;
+        //        slips[(int)(a.slip * 100) - 1]++;
+        //    }
+           //g2.setColor(BG);
+           //g2.fillRect(0, 0, w, h - 400);
 
-//            for (int i = 0; i < 100; i++) {
-//                g2.setColor(Color.getHSBColor(i / 100f, 1f, 0.5f));
-//                if(speeds[i] > 0) g2.fillRect(i * 5, h - 400 - speeds[i] * 5, 5, speeds[i] * 5);
-//            }
-//            ImageIO.write(image, "png", new File("graph/G" + (frame / SKIP_FRAMES) + ".png"));
+           //for (int i = 0; i < 100; i++) {
+//               g2.setColor(Color.getHSBColor(i / 100f, 1f, 0.5f));
+//               if(speeds[i] > 0) g2.fillRect(i * 5, h - 400 - speeds[i] * 5, 5, speeds[i] * 5);
+//           }
+           //ImageIO.write(image, "png", new File("graph/G" + (frame / SKIP_FRAMES) + ".png"));
+            // КОНЕЦ алгоритм изменения скоростей
         }
     }
 
@@ -111,8 +130,9 @@ public class Form extends JFrame implements Runnable {
             g2.setColor(Food.COLOR[a.type]);
             g2.fillOval((int) a.x - FOOD_RADIUS, (int) a.y - FOOD_RADIUS, FOOD_RADIUS * 2, FOOD_RADIUS * 2);
         }
-        float bacteriaScale = BACTERIA_RADIUS * 0.01f;
+        float bacteriaScale;// = BACTERIA_RADIUS * 0.01f;
         for (Bacterium a : bacteria) {
+            bacteriaScale = a.bacteria_radius * 0.01f;
             float sw = sprites[a.type].getWidth() * 0.5f * bacteriaScale;
             float sh = sprites[a.type].getHeight() * 0.5f * bacteriaScale;
             AffineTransform trans = new AffineTransform();
@@ -121,27 +141,42 @@ public class Form extends JFrame implements Runnable {
             trans.rotate(a.rotation + Math.PI / 2, sw, sh);
             trans.scale(bacteriaScale, bacteriaScale);
             g2.drawImage(sprites[a.type], trans, this);
+
+            // информация о бактерии
+            Font currentFont = g2.getFont();
+            Font newFont = currentFont.deriveFont(currentFont.getSize() * 1.4F);
+            Color c = g2.getColor();
+            g2.setColor(Color.BLACK);
+            g2.setFont(newFont);
+            g2.drawString(Integer.toString((int)a.food), a.x-10 , a.y );
+            g2.drawString(Integer.toString((int)
+                Math.toDegrees(a.rotation)
+                ), a.x-10 , a.y+15 );
+
+            g2.setFont(currentFont);
+            g2.setColor(c);
         }
 //        ImageIO.write(image, "png", new File("images/T" + (frame / SKIP_FRAMES) + ".png"));
     }
 
     private void logic() {
+        float step_s = 5f;
         for (Bacterium a : bacteria) {
             a.x += a.sx;
             a.y += a.sy;
             a.sx *= a.slip;
             a.sy *= a.slip;
             if(a.x < 0) {
-                a.sx += 5;
+                a.sx += step_s;
             }
             else if(a.x > w) {
-                a.sx -= 5;
+                a.sx -= step_s;
             }
             if(a.y < 0) {
-                a.sy += 5;
+                a.sy += step_s;
             }
             else if(a.y > h) {
-                a.sy -= 5;
+                a.sy -= step_s;
             }
             double targetAngle = Math.atan2(a.ty, a.tx);
             float rotationForMotion;
@@ -179,9 +214,11 @@ public class Form extends JFrame implements Runnable {
                     if (closestFood != null) {
                         a.tx = closestFood.x - a.x;
                         a.ty = closestFood.y - a.y;
-                        if (minFoodDist < FOOD_RADIUS * FOOD_RADIUS + BACTERIA_RADIUS * BACTERIA_RADIUS) {
+                        //if (minFoodDist < FOOD_RADIUS * FOOD_RADIUS + BACTERIA_RADIUS * BACTERIA_RADIUS) {
+                        if (minFoodDist < FOOD_RADIUS * FOOD_RADIUS + a.bacteria_radius * a.bacteria_radius) {
                             closestFood.toBeDeleted = true;
                             a.food++;
+                            a.bacteria_radius+=(int)a.bacteria_radius/20;
                         }
                     }
                     else {
@@ -191,7 +228,9 @@ public class Form extends JFrame implements Runnable {
                             a.ty = (float)Math.sin(randomAngle) * 2;
                         }
                     }
-                } else if (a.type == 1) {
+                } else 
+                // Если батерия КРАСНАЯ
+                if (a.type == 1) {
                     Bacterium closestFood = null;
                     float minFoodDist = (w * w) + (h * h);
                     for (Bacterium b : bacteria) {
@@ -209,9 +248,10 @@ public class Form extends JFrame implements Runnable {
                     if (closestFood != null) {
                         a.tx = closestFood.x - a.x;
                         a.ty = closestFood.y - a.y;
-                        if (minFoodDist < BACTERIA_RADIUS * BACTERIA_RADIUS + BACTERIA_RADIUS * BACTERIA_RADIUS) {
+                        if (minFoodDist < a.bacteria_radius * a.bacteria_radius + a.bacteria_radius * a.bacteria_radius) {
                             closestFood.toBeDeleted = true;
                             a.food += closestFood.food * 0.1f;
+                            a.bacteria_radius+=(int)a.bacteria_radius/20;
                         }
                     }
                     else {
@@ -221,7 +261,7 @@ public class Form extends JFrame implements Runnable {
                             a.ty = (float)Math.sin(randomAngle) * 2;
                         }
                     }
-                }
+                } // конец "Если батерия КРАСНАЯ"
             }
         }
         for (int i = 0; i < bacteria.size(); i++) {
@@ -232,7 +272,7 @@ public class Form extends JFrame implements Runnable {
                 if(Math.random() < 0.05) {
                     type = (int)(Math.random() * 2);
                 }
-                Bacterium b = new Bacterium(type, a.x + (float)Math.random() * 10 - 5, a.y + (float)Math.random() * 10 - 5);
+                Bacterium b = new Bacterium(type, a.x + (float)Math.random() * 10 - 5, a.y + (float)Math.random() * 10 - 5, START_BACTERIA_RADIUS);
                     b.speed = a.speed;
                     b.slip = a.slip;
                 /*if(Math.random() < 0.5) {
@@ -249,6 +289,7 @@ public class Form extends JFrame implements Runnable {
             else {
                 if(a.age % 300 == 299) {
                     a.food -= 0.2f;
+                    a.bacteria_radius = a.bacteria_radius * 0.99f;
                 }
                 a.age++;
             }
@@ -268,6 +309,47 @@ public class Form extends JFrame implements Runnable {
             food.add(a);
         }
         frame++;
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+
+    }
+
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+    @Override
+    public void mousePressed(MouseEvent e) {
+        int type = 0;
+        if(e.getButton() == 3) type = 1;
+//        points.add(new Point(e.getX(), e.getY(), type));
+//        points.add(new Point(e.getX() - 16, e.getY() - 38, type));
+        if (type == 0 )
+        {
+            Food a = new Food((float)(e.getX()-16), (float)e.getY()-38);
+            food.add(a);
+        }
+        else if (type==1)
+        {
+            Bacterium b = new Bacterium(0, (float)(e.getX()-16), (float)e.getY()-38, START_BACTERIA_RADIUS);
+            bacteria.add(b);           
+        }
+        //Food a = new Food((float)(Math.random() * (w - 100) + 50), (float)(Math.random() * (h - 100) + 50));
+        //food.add(a);
+
     }
 
 }
